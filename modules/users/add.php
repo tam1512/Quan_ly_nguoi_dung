@@ -84,8 +84,8 @@ $data = [
             setFlashData('message', 'Thêm tài khoản thành công.');
             setFlashData('msg_type', 'success');
       } else {
-         setFlashData('message', 'Lỗi hệ thống. Vui lòng thử lại sau.');
-         setFlashData('msg_type', 'danger');
+        setFlashData('message', 'Lỗi hệ thống. Vui lòng thử lại sau.');
+         setFlashData('msg_type', 'danger'); 
       }
       redirect('?module=users');
       

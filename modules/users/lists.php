@@ -31,7 +31,7 @@ if(isGet()) {
 
    if(!empty(getBody()["keyword"])) {
       $keyword = trim(getBody()["keyword"]);
-      echo $filter;
+      
       if( !empty($filter) && strpos($filter, "WHERE") >= 0) {
          $operator = 'AND';
       } else {
