@@ -204,25 +204,34 @@ function isLogin() {
 function saveActivity() {
   $userId = isLogin()['userId'];
   update('users', ['lastActivity' => date('Y-m-d H:i:s')], 'id='.$userId);
+  setcookie('userId', $userId, time() + 60*_TIME_OUT_LOGIN, '/');
 }
 
 //Tự động xóa token khi người dùng không hoạt động _TIME_OUT_LOGIN phút hoặc thoát trình duyệt quá thời gian đó, nếu trong thời gian đó người dùng quay lại trang web thì sẽ tự động đăng nhập
 function autoLogin() {
-  $ip = $_SERVER['REMOTE_ADDR'];
-  $queryLoginToken = firstRaw("SELECT * FROM logintoken WHERE ip_user = '$ip'");
-  if(!empty($queryLoginToken)) {
-    $userId = $queryLoginToken['userId'];
-    $queryUser = firstRaw("SELECT lastActivity FROM users WHERE id = $userId");
-    $lastActivity = $queryUser['lastActivity'];
-    $now = date('Y-m-d H:i:s');
-    $diff = strtotime($now) - strtotime($lastActivity);
-    $diff = floor($diff/60);
-    if($diff > _TIME_OUT_LOGIN) {
-      delete('logintoken', 'userId='.$userId);
-      return false;
-    } else {
-      setSession('login_token', $queryLoginToken['token']);
-      return true;
+  if(!empty($_COOKIE['userId'])) {
+    $cookie_user = $_COOKIE['userId'];
+    if(!empty($cookie_user)) {
+      $queryLoginToken = firstRaw("SELECT * FROM logintoken WHERE userId = '$cookie_user'");
+      if(!empty($queryLoginToken)) {
+          setSession('login_token', $queryLoginToken['token']);
+      }
     }
   }
+}
+
+//Tự động xóa logintoken sau một khoản thời gian không hoạt động
+function autoRemoveLoginToken() {
+  $userId = isLogin()['userId'];
+  $queryUser = firstRaw("SELECT lastActivity FROM users WHERE id = $userId");
+  $lastActivity = $queryUser['lastActivity'];
+  $now = date('Y-m-d H:i:s');
+  $diff = strtotime($now) - strtotime($lastActivity);
+  $diff = floor($diff/60);
+  if($diff >= _TIME_OUT_LOGIN) {
+    delete('logintoken', "userId=$userId");
+    setcookie('userId', $userId, time()-60);
+    return true;
+  }
+  return false;
 }

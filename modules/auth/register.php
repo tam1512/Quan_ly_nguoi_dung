@@ -76,7 +76,8 @@ $data = [
          'phone' => $phone,
          'password' => password_hash($password, PASSWORD_DEFAULT),
          'activeToken' => $activeToken,
-         'createAt' => date('Y-m-d H:i:s')
+         'createAt' => date('Y-m-d H:i:s'),
+         'per_id' => 2
       ];
 
       $insertStatus = insert('users', $dataInsert);

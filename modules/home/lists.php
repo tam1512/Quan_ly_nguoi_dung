@@ -1,6 +1,7 @@
 <?php
 if(!defined('_INCODE')) die('Access denied...');
 removeSession();
+autoLogin();
 ?>
 <!DOCTYPE html>
 <html lang="en">

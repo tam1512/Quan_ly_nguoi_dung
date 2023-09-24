@@ -1,6 +1,5 @@
 <?php
 if(!defined('_INCODE')) die('Access denied...');
-// autoRemoveLoginToken();
 ?>
 <!DOCTYPE html>
 <html lang="en">

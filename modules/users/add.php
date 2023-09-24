@@ -25,6 +25,7 @@ $data = [
    $password = trim($body['password']);
    $confirm_password = trim($body['confirm_password']);
    $status = trim($body['status']);
+   $per_id = trim($body['permission']);
 
    // Validate họ tên: bắt buộc nhập, >= 5 ký tự
    if(empty($fullname)) {
@@ -76,7 +77,8 @@ $data = [
          'phone' => $phone,
          'password' => password_hash($password, PASSWORD_DEFAULT),
          'createAt' => date('Y-m-d H:i:s'),
-         'status' => $status
+         'status' => $status,
+         'per_id' => $per_id
       ];
 
       $insertStatus = insert('users', $dataInsert);
@@ -102,6 +104,7 @@ $message = getFlashData('message');
 $msgType = getFlashData('msg_type');
 $errors = getFlashData('errors');
 $old = getFlashData('old');
+
  ?>
 
 <div class="container">
@@ -134,8 +137,6 @@ $old = getFlashData('old');
                         value="<?php echo old('email', $old) ?>">
                      <?php echo form_error('email', $errors, '<span class="error">', '</span>') ?>
                   </div>
-               </div>
-               <div class="col">
                   <div class="form-group">
                      <label for="password">Mật khẩu</label>
                      <input type="password" id="password" name="password" class="form-control" placeholder="Mật khẩu"
@@ -147,6 +148,24 @@ $old = getFlashData('old');
                      <input type="password" id="confirm_password" name="confirm_password" class="form-control"
                         placeholder="Nhập lại mật khẩu" value="<?php echo old('confirm_password', $old) ?>">
                      <?php echo form_error('confirm_password', $errors, '<span class="error">', '</span>') ?>
+                  </div>
+                  <div class="form-group">
+                     <label for="permission">Quyền</label>
+                     <select name="permission" id="permission" class="form-control">
+                        <option value="1"
+                           <?php echo (!empty($old['status']) && $old['status'] == 1) ? 'selected' :  false?>>Chỉ đọc
+                        </option>
+                        <option value="2"
+                           <?php echo (!empty($old['status']) && $old['status'] == 2) ? 'selected' : false ?>>Chỉnh sửa
+                           và xóa
+                        </option>
+                        <option value="3"
+                           <?php echo (!empty($old['status']) && $old['status'] == 3) ? 'selected' : false ?>>Chỉnh sửa
+                        </option>
+                        <option value="4"
+                           <?php echo (!empty($old['status']) && $old['status'] == 4) ? 'selected' : false ?>>Toàn quyền
+                        </option>
+                     </select>
                   </div>
                   <div class="form-group">
                      <label for="status">Tình trạng</label>

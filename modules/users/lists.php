@@ -12,6 +12,11 @@ if(!defined('_INCODE')) die('Access denied...');
  ];
 
  layout('header', $data);
+ 
+ // lấy ra userId
+ $userId = $_COOKIE['userId'];
+ $permisstion_id = firstRaw("SELECT per_id FROM users WHERE id = $userId")['per_id'];
+
  echo '<div class="container"> <br>'; 
 
 $listAllUsers = getRaw("SELECT * FROM users ORDER BY createAt");
@@ -71,7 +76,7 @@ $limitPagination = _LIMIT_PAGINATION;
  * page = 3 => offset = 6
  */
 $offset = ($page - 1) * $userOnPage;
-$listUsersOnPage = getRaw("SELECT id,fullname, email, phone, status FROM users $filter LIMIT $offset, $userOnPage");
+$listUsersOnPage = getRaw("SELECT id,fullname, email, phone, status, per_id FROM users $filter LIMIT $offset, $userOnPage");
 
 //Xử lý query String
 $queryStr = null;
@@ -86,6 +91,34 @@ if(!empty($_SERVER["QUERY_STRING"])) {
 } 
 $message = getFlashData('message');
 $msgType = getFlashData('msg_type');
+
+// lấy ra các quền của tài khoản
+$isAdd = firstRaw("SELECT * FROM permission WHERE id = $permisstion_id")['add'];
+$isUpdate = firstRaw("SELECT * FROM permission WHERE id = $permisstion_id")['update'];
+$isDelete = firstRaw("SELECT * FROM permission WHERE id = $permisstion_id")['delete'];
+
+// được add và delete là cao hơn dù cho có 1 hay nhiều quyền 
+/**
+ * 1 => add and delete => [1, 2, 3, 4]
+ * 2 => delete => [1, 2, 3]
+ * 3 => add => [1, 2, 3, 4]
+ * 4 => update => [1, 3]
+ * 5 => read only 
+ *
+ */
+
+ if(!empty($isAdd) && !empty($isDelete)) {
+   $level = 1;
+ } else if(!empty($isDelete)) {
+   $level = 2;
+ } else if(!empty($isAdd)) {
+   $level = 3;
+ } else if(!empty($isUpdate)) {
+   $level = 4;
+ } else {
+   $level = 5;
+ }
+ setcookie('level', $level, time()+3600, '/');
 ?>
 
 <hr />
@@ -93,9 +126,13 @@ $msgType = getFlashData('msg_type');
    getMsg($message, $msgType);
 ?>
 <h3>Quản lý người dùng</h3>
-<p>
-   <a href="?module=users&action=add" class="btn btn-success btn-sm">Thêm người dùng <i class="fa fa-plus"> </i></a>
-</p>
+<?php 
+   if(!empty($isAdd)) {
+      echo "<p>";
+      echo '<a href="?module=users&action=add" class="btn btn-success btn-sm">Thêm người dùng <i class="fa fa-plus"> </i></a>';
+      echo "</p>";
+   }
+?>
 <form action="" method="get">
    <div class="row">
       <div class="col">
@@ -136,6 +173,33 @@ $msgType = getFlashData('msg_type');
          if(!empty($listUsersOnPage)):
             $count = 0;
             foreach($listUsersOnPage as $user):
+               $per_id = $user['per_id'];
+               // lấy ra các quền của tài khoản
+               $isAddUser = firstRaw("SELECT * FROM permission WHERE id = $per_id")['add'];
+               $isUpdateUser = firstRaw("SELECT * FROM permission WHERE id = $per_id")['update'];
+               $isDeleteUser = firstRaw("SELECT * FROM permission WHERE id = $per_id")['delete'];
+
+
+               if(!empty($isAddUser) && !empty($isDeleteUser)) {
+                  $levelUser = 1;
+               } else if(!empty($isDeleteUser)) {
+                  $levelUser = 2;
+               } else if(!empty($isAddUser)) {
+                  $levelUser = 3;
+               } else if(!empty($isUpdateUser)) {
+                  $levelUser = 4;
+               } else {
+                  $levelUser = 5;
+               }
+               
+               // Nếu quyền thấp hơn thì không được update và delete
+               $isUpdateTable = $isUpdate;
+               $isDeleteTable = $isDelete;
+               if($level >= $levelUser) {
+                  $isUpdateTable = 0;
+                  $isDeleteTable = 0;
+               } 
+               
                $count++;
       ?>
       <tr>
@@ -146,10 +210,12 @@ $msgType = getFlashData('msg_type');
          <td>
             <?php echo $user['status'] == 1 ? '<button type="button" class="btn btn-success btn-sm">Kích hoạt</button>' : '<button type="button" class="btn btn-warning btn-sm">Chưa kích hoạt</button>' ?>
          </td>
-         <td><a href="?module=users&action=edit&id=<?php echo  $user['id']?>" class="btn btn-warning btn-sm"><i
+         <td><a href="?module=users&action=edit&id=<?php echo  $user['id']?>"
+               class="btn btn-warning btn-sm <?php echo empty($isUpdateTable) ? 'disabled' : null ?>"><i
                   class="fa fa-edit"></i></a></td>
          <td><a href="<?php echo _WEB_HOST_ROOT."?module=users&action=delete&id=".$user["id"] ?>"
-               class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')"><i class="fa fa-trash-o"></i></a>
+               class="btn btn-danger btn-sm <?php echo empty($isDeleteTable) ? 'disabled' : null ?>"
+               onclick="return confirm('Are you sure?')"><i class="fa fa-trash-o"></i></a>
          </td>
       </tr>
       <?php endforeach; else: ?>
@@ -191,11 +257,21 @@ $msgType = getFlashData('msg_type');
                $begin = $end - $limitPagination + 1;
             }
 
-            for($i = $begin; $i <= $end; $i++) {
-               if($page == $i) {
-                  echo '<li class="page-item active"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
-               } else {
-                  echo '<li class="page-item"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
+            if($numPage <= $limitPagination) {
+               for($i = 1; $i <= $numPage; $i++) {
+                  if($page == $i) {
+                     echo '<li class="page-item active"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
+                  } else {
+                     echo '<li class="page-item"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
+                  }
+               }
+            } else {
+               for($i = $begin; $i <= $end; $i++) {
+                  if($page == $i) {
+                     echo '<li class="page-item active"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
+                  } else {
+                     echo '<li class="page-item"><a class="page-link" href="'._WEB_HOST_ROOT.'?module=users'.$queryStr.'&page='.$i.'">'.$i.'</a></li>';
+                  }
                }
             }
          }   

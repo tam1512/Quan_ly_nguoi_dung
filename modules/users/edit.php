@@ -15,7 +15,7 @@ if(isGet()) {
    $userId = trim(getBody()['id']);
    
    if(!empty($userId)) {
-      $defaultUser = firstRaw("SELECT fullname, email, phone, status FROM users WHERE id = '$userId'");
+      $defaultUser = firstRaw("SELECT fullname, email, phone, status, per_id FROM users WHERE id = '$userId'");
       setFlashData('defaultUser', $defaultUser);
    } else {
       redirect("?module=users");
@@ -35,6 +35,7 @@ if(isGet()) {
    $password = trim($body['password']);
    $confirm_password = trim($body['confirm_password']);
    $status = trim($body['status']);
+   $per_id = trim($body['per_id']);
    $userId = trim($body['id']);
    // Validate họ tên: bắt buộc nhập, >= 5 ký tự
    if(empty($fullname)) {
@@ -85,7 +86,8 @@ if(isGet()) {
          'fullname' => $fullname,
          'phone' => $phone,
          'updateAt' => date('Y-m-d H:i:s'),
-         'status' => $status
+         'status' => $status,
+         'per_id' => $per_id,
       ];
       if(!empty($password)) {
          $dataUpdate['password'] = password_hash($password, PASSWORD_DEFAULT);
@@ -110,6 +112,27 @@ if(isGet()) {
    }
 }
 
+// Cấp bậc quyền
+$level = $_COOKIE['level'];
+
+// Nên phát triển dựa trên csdl
+
+//Mảng cấp bậc quyền và các mã quyền được set trong csdl
+$levelArr= [
+   1 => [1, 2, 3, 4],
+   2 => [1, 2, 3],
+   3 => [1, 2, 3, 4],
+   4 => [1, 3]
+];
+
+// Mảng quyền trong csdl
+$permission = [
+   1 => 'Chỉ đọc',
+   2 => 'Chỉnh sửa và xóa',
+   3 => 'Chỉnh sửa',
+   4 => 'Toàn quyền'
+];
+
 $message = getFlashData('message');
 $msgType = getFlashData('msg_type');
 $errors = getFlashData('errors');
@@ -118,8 +141,8 @@ $defaultUser = getFlashData('defaultUser');
 if(!empty($defaultUser)) {
    $old = $defaultUser;
 }
+$userIdCookie = $_COOKIE['userId'];
 
-$infor = getFlashData('infor');
  ?>
 
 <div class="container">
@@ -152,8 +175,28 @@ $infor = getFlashData('infor');
                         value="<?php echo old('email', $old) ?>">
                      <?php echo form_error('email', $errors, '<span class="error">', '</span>') ?>
                   </div>
-               </div>
-               <div class="col">
+                  <div class="form-group">
+                     <label for="per_id">Quyền</label>
+                     <select name="per_id" id="per_id" class="form-control">
+                        <?php 
+                           if(!empty($level)) {
+                              foreach($levelArr as $key => $value) {
+                                 if($level == $key) {
+                                    foreach($value as $item) {
+                                       echo '<option value="'.$item.'"';
+                                       echo (!empty($defaultUser['per_id']) && $defaultUser['per_id'] == $item) ? 'selected' :  null;
+                                       echo '>';
+                                       echo $permission[$item];
+                                       echo '</option>';
+                                    }
+                                    break;
+                                 }
+                              }
+                           }
+
+                        ?>
+                     </select>
+                  </div>
                   <div class="form-group">
                      <label for="password">Mật khẩu</label>
                      <input type="password" id="password" name="password" class="form-control" placeholder="Mật khẩu"
@@ -182,8 +225,7 @@ $infor = getFlashData('infor');
                </div>
             </div>
             <button class="btn btn-primary" type="submit">Sửa tài khoản</button>
-            <a href="<?php echo !empty($infor) ? '?module=users&action=infor&id='.$userId : '?module=users' ?>"
-               class="btn btn-success">Quay lại</a>
+            <a href="<?php echo '?module=users' ?>" class="btn btn-success">Quay lại</a>
             <hr>
          </form>
       </div>

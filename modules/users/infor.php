@@ -76,6 +76,14 @@ if(!empty($old)) {
    $infor['fullname'] = $old['fullname'];
    $infor['phone'] = $old['phone'];
 } 
+
+// Mảng quyền trong csdl
+$permission = [
+   1 => 'Chỉ đọc',
+   2 => 'Chỉnh sửa và xóa',
+   3 => 'Chỉnh sửa',
+   4 => 'Toàn quyền'
+];
 ?>
 <hr>
 <div class="container mt-5">
@@ -101,6 +109,11 @@ if(!empty($old)) {
                <input type="text" name="fullname" class="form-control"
                   value="<?php echo form_infor('fullname', $infor) ?>">
                <?php echo form_error('fullname', $errors, '<span class="error">', '</span>') ?>
+            </div>
+            <div class="form-group">
+               <label>Quyền hạn:</label>
+               <input type="text" class="form-control" value="<?php echo $permission[form_infor('per_id', $infor)] ?>"
+                  readonly>
             </div>
             <div class="form-group">
                <label>Trạng thái tài khoản:</label>

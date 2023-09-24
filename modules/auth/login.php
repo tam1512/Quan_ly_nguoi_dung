@@ -13,7 +13,7 @@ autoLogin();
 if(isLogin()) {
    redirect('?module=users');
 }
-
+// autoRemoveLoginToken();
 
 //validate form
 if(isPost()) {
@@ -53,13 +53,12 @@ if(isPost()) {
 
       //Tạo login token 
       $loginToken = sha1(uniqid().time());
-      $ip = $_SERVER['REMOTE_ADDR'];
       // Thêm login token vào bảng logintoken
       $dataInsert = [
          'userId' => $userId,
          'token' => $loginToken,
          'createAt' => date('Y-m-d H:i:s'),
-         'ip_user' => $ip
+         
       ];
 
       $insertStatus = insert('logintoken', $dataInsert);
@@ -112,7 +111,7 @@ $msgType = getFlashData('msg_type');
          <button class="btn btn-primary btn-block" type="submit">Đăng nhập</button>
          <hr>
          <p class="text-center"><a href="?module=auth&action=forgot">Quên mật khẩu</a></p>
-         <p class="text-center"><a href="?module=auth&action=register">Đăng ký tài khoản</a></p>
+         <!-- <p class="text-center"><a href="?module=auth&action=register">Đăng ký tài khoản</a></p> -->
       </form>
    </div>
 </div>
